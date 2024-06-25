@@ -1,36 +1,53 @@
 import { create } from 'zustand'
 // import { DraftPatient, Patient } from '../types'
 // import { v4 as uuidv4 } from 'uuid'
-import { devtools, persist } from 'zustand/middleware'
-import { CryptoCurrencies, Pair } from '../types'
+import { devtools } from 'zustand/middleware'
+import { CryptoCurrencies, Pair, Response } from '../types'
 import { getCryptos, getResponse } from '../services/CryptoService'
 
 
 type CryptoCurrencyState = {
     cryptocurrencies: CryptoCurrencies,
+    result: Response,
     fetchCryptos: () => Promise<void>,
-    fetchData: (pair: Pair) => Promise<void>
+    fetchData: (pair: Pair) => Promise<void>,
+    loading: boolean
 }
 
 export const useCryptoCurrencyStore = create<CryptoCurrencyState>()(
     devtools(
-        persist(
-            (set) => ({
-                cryptocurrencies: [],
-                fetchCryptos: async () => {
-                    const cryptocurrencies = await getCryptos()
-                    set(() => ({
-                        cryptocurrencies
-                    }))
+        (set) => ({
+            cryptocurrencies: [],
+            loading: false,
+            //aca le digo que trate a este objeto, que inicia vacio, como tipo Response
+            //otra opcion es ponerle cada campo como ''
+            result: {
+                PRICE: '',
+                IMAGEURL: '',
+                LASTUPDATE: '',
+                HIGHDAY: '',
+                LOWDAY: '',
+                CHANGEPCT24HOUR: '',
+            },
+            fetchCryptos: async () => {
+                const cryptocurrencies = await getCryptos()
+                set(() => ({
+                    cryptocurrencies
+                }))
 
-                },
-                fetchData: async (pair) => {
-                    const result = await getResponse(pair)
-                    console.log(result);
-                }
-            }), {
-            name: 'cryptoCurrencies-storage'
-        })
+            },
+            fetchData: async (pair) => {
+                set(() => ({
+                    loading: true
+                }))
+                const result = await getResponse(pair)
+                set(() => ({
+                    result: result,
+                    loading: false
+                }))
+            }
+        }), {
+    }
     ))
 
 
